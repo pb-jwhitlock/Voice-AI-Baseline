@@ -15,7 +15,7 @@
     - [ ] Implement Retell AI SDK initialization with API keys from `.env`.
     - [ ] Develop a basic endpoint to receive incoming calls via Retell AI webhook.
     - [ ] Implement initial professional greeting using Retell AI.
-- [ ] Task: Conductor - User Manual Verification 'Core System Setup and Retell AI Integration' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Core System Setup and Retell AI Integration' (Protocol in workflow.md) [056e72f]
 
 ## Phase 2: Lead Capture and Basic Triage Logic
 
