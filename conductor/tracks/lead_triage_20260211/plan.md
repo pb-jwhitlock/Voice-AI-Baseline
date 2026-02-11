@@ -1,6 +1,6 @@
 # Implementation Plan: Implement Core 24/7 Lead Capture and Emergency Triage System
 
-## Phase 1: Core System Setup and Retell AI Integration
+## Phase 1: Core System Setup and Retell AI Integration [checkpoint: 056e72f]
 
 - [x] Task: Set up Node.js Project Structure [ef823ab]
     - [ ] Write tests for initial project setup and dependency management.
