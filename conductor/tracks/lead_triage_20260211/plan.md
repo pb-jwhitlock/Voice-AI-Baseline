@@ -9,7 +9,7 @@
     - [ ] Configure `package.json` for basic scripts (start, test).
     - [ ] Implement basic Express server setup with a health check endpoint.
     - [ ] Implement `.env` file for environment variables and API key management.
-- [ ] Task: Integrate Retell AI SDK
+- [x] Task: Integrate Retell AI SDK [47fead9]
     - [ ] Write tests for Retell AI SDK initialization and basic voice functionality.
     - [ ] Install Retell AI SDK.
     - [ ] Implement Retell AI SDK initialization with API keys from `.env`.
