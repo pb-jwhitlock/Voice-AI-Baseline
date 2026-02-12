@@ -176,6 +176,31 @@ describe('Standard Call Intake Flow', () => {
     assert.strictEqual(callStates['test_call_id'].emergencyDetected, true, 'Emergency should be detected');
   });
 
+  it('should continue emergency flow by asking for address', async () => {
+    const res = { json: sinon.stub() };
+
+    // Simulate call_started -> EMERGENCY_CONFIRMATION
+    await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+    await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: 'I have a gas leak!' }] } }, { json: () => {} });
+
+    // Simulate turn_ended with user confirming safety/location
+    const reqConfirmSafety = {
+      body: {
+        event_type: 'turn_ended',
+        call_id: 'test_call_id',
+        transcript: [{ role: 'user', content: 'Yes, it is safe. I am at 123 Main St.' }],
+      },
+    };
+    await handleRetellWebhook(reqConfirmSafety, res);
+
+    assert.ok(res.json.calledOnce, 'Response should be sent');
+    assert.deepStrictEqual(res.json.getCall(0).args[0], {
+      response_type: 'response_type_text',
+      text: 'Thank you for confirming. Can you provide the exact address of the emergency?',
+    });
+    assert.strictEqual(callStates['test_call_id'].state, 'EMERGENCY_COLLECT_ADDRESS', 'State should move to EMERGENCY_COLLECT_ADDRESS');
+  });
+
   it('should not detect emergency keywords and continue with standard flow', async () => {
     const res = { json: sinon.stub() };
 

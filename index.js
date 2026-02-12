@@ -74,8 +74,8 @@ const handleRetellWebhook = async (req, res) => {
       const lastUserUtterance = event.transcript && event.transcript.findLast(t => t.role === 'user');
       const userText = lastUserUtterance ? lastUserUtterance.content : '';
 
-      // Check for emergency keywords first
-      if (detectEmergency(userText)) {
+      // Check for emergency keywords first (only if not already in emergency flow)
+      if (!currentCallState.emergencyDetected && detectEmergency(userText)) {
         currentCallState.emergencyDetected = true;
         currentCallState.state = 'EMERGENCY_CONFIRMATION';
         botResponse.text = 'I understand this is an emergency. Can you confirm your current location and is it safe?';
@@ -119,21 +119,33 @@ const handleRetellWebhook = async (req, res) => {
           break;
 
         case 'EMERGENCY_CONFIRMATION':
-          // For now, simply acknowledge and move to next emergency step (e.g., collect address)
+          // Assume user confirms safety/location and asks for address
+          currentCallState.state = 'EMERGENCY_COLLECT_ADDRESS';
           botResponse.text = 'Thank you for confirming. Can you provide the exact address of the emergency?';
-          // Future state: currentCallState.state = 'EMERGENCY_COLLECT_ADDRESS';
+          break;
+
+        case 'EMERGENCY_COLLECT_ADDRESS':
+          // Here, we would parse and store the address
+          currentCallState.emergencyAddress = userText;
+          // After collecting address, we might ask for more details or dispatch
+          botResponse.text = `Thank you. We have the address as ${currentCallState.emergencyAddress}. Help will be dispatched immediately.`;
+          currentCallState.state = 'COMPLETED_EMERGENCY';
           break;
 
         case 'COMPLETED':
           // Conversation is completed, perhaps just acknowledge or end the call
           botResponse.text = 'Your request has been noted. Goodbye.';
           break;
+        
+        case 'COMPLETED_EMERGENCY':
+          botResponse.text = 'Thank you. Help is on the way. Goodbye.';
+          break;
+
 
         default:
           botResponse.text = 'I am sorry, I do not understand. Could you please start over?';
           break;
       }
-      console.log(`[${callId}] New State (after switch): ${currentCallState.state}`);
       break;
 
     default:
