@@ -1,6 +1,5 @@
 const assert = require('assert');
 const sinon = require('sinon');
-// const { createRetellClient } = require('../utils/retellClient'); // Not needed for direct bot response generation
 const { handleRetellWebhook, getLeads, clearLeads, callStates } = require('../index'); // Import callStates
 
 describe('Standard Call Intake Flow', () => {
@@ -105,12 +104,12 @@ describe('Standard Call Intake Flow', () => {
     await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: 'My name is Alice' }] } }, { json: () => {} });
     await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: '555-987-6543' }] } }, { json: () => {} });
 
-    // Simulate turn_ended with service issue
+    // Simulate turn_ended with service issue (non-emergency)
     const reqUserIssue = {
       body: {
         event_type: 'turn_ended',
         call_id: 'test_call_id',
-        transcript: [{ role: 'user', content: 'My toilet is overflowing' }],
+        transcript: [{ role: 'user', content: 'I have a clogged drain' }], // Changed to non-emergency
       },
     };
     await handleRetellWebhook(reqUserIssue, res);
@@ -121,9 +120,9 @@ describe('Standard Call Intake Flow', () => {
     assert.deepStrictEqual(storedLeads[0], {
       name: 'Alice',
       phone: '555-987-6543',
-      serviceIssue: 'My toilet is overflowing',
+      serviceIssue: 'I have a clogged drain',
     });
-    assert.strictEqual(callStates['test_call_id'].serviceIssue, 'My toilet is overflowing', 'Service issue should be stored in callState');
+    assert.strictEqual(callStates['test_call_id'].serviceIssue, 'I have a clogged drain', 'Service issue should be stored in callState');
   });
 
   it('should handle invalid phone number input', async () => {
@@ -150,6 +149,56 @@ describe('Standard Call Intake Flow', () => {
     });
     assert.strictEqual(getLeads().length, 0, 'No lead should be stored for invalid phone');
     assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_PHONE', 'State should remain COLLECT_PHONE');
+  });
+
+  it('should detect emergency keywords and switch to emergency flow', async () => {
+    const res = { json: sinon.stub() };
+
+    // Simulate call_started
+    await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+
+    // Simulate turn_ended with emergency keyword
+    const reqEmergency = {
+      body: {
+        event_type: 'turn_ended',
+        call_id: 'test_call_id',
+        transcript: [{ role: 'user', content: 'I have a burst pipe!' }],
+      },
+    };
+    await handleRetellWebhook(reqEmergency, res);
+
+    assert.ok(res.json.calledOnce, 'Response should be sent');
+    assert.deepStrictEqual(res.json.getCall(0).args[0], {
+      response_type: 'response_type_text',
+      text: 'I understand this is an emergency. Can you confirm your current location and is it safe?',
+    });
+    assert.strictEqual(callStates['test_call_id'].state, 'EMERGENCY_CONFIRMATION', 'State should switch to EMERGENCY_CONFIRMATION');
+    assert.strictEqual(callStates['test_call_id'].emergencyDetected, true, 'Emergency should be detected');
+  });
+
+  it('should not detect emergency keywords and continue with standard flow', async () => {
+    const res = { json: sinon.stub() };
+
+    // Simulate call_started
+    await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+
+    // Simulate turn_ended with no emergency keyword
+    const reqStandard = {
+      body: {
+        event_type: 'turn_ended',
+        call_id: 'test_call_id',
+        transcript: [{ role: 'user', content: 'I need a new faucet installed.' }],
+      },
+    };
+    await handleRetellWebhook(reqStandard, res);
+
+    assert.ok(res.json.calledOnce, 'Response should be sent');
+    assert.deepStrictEqual(res.json.getCall(0).args[0], {
+      response_type: 'response_type_text',
+      text: 'I did not catch your name. Can you please state your name?',
+    });
+    assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_NAME', 'State should remain COLLECT_NAME');
+    assert.strictEqual(callStates['test_call_id'].emergencyDetected, false, 'Emergency should not be detected');
   });
 
   it('should handle call_ended event and clear state', async () => {

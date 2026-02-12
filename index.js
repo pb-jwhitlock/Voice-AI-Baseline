@@ -1,10 +1,8 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 require('dotenv').config();
+const fs = require('fs');
 
-// The createRetellClient is not directly used for generating bot responses in this conversational model.
-// It would be used for API calls to Retell (e.g., registering calls, updating agent status),
-// but for direct response generation in the webhook, we're building the response ourselves.
 // const { createRetellClient } = require('./utils/retellClient');
 
 const app = express();
@@ -29,8 +27,17 @@ const clearLeads = () => {
   leads = [];
 };
 
+// Load emergency keywords
+const emergencyKeywords = JSON.parse(fs.readFileSync('./config/keywords.json', 'utf8')).emergencyKeywords.map(k => k.toLowerCase());
+
 // Conversational state for each call
 const callStates = {};
+
+// Helper function to detect emergency keywords
+const detectEmergency = (text) => {
+  const lowerText = text.toLowerCase();
+  return emergencyKeywords.some(keyword => lowerText.includes(keyword));
+};
 
 const handleRetellWebhook = async (req, res) => {
   const event = req.body;
@@ -42,6 +49,7 @@ const handleRetellWebhook = async (req, res) => {
       name: '',
       phone: '',
       serviceIssue: '',
+      emergencyDetected: false,
     };
   }
 
@@ -66,13 +74,26 @@ const handleRetellWebhook = async (req, res) => {
       const lastUserUtterance = event.transcript && event.transcript.findLast(t => t.role === 'user');
       const userText = lastUserUtterance ? lastUserUtterance.content : '';
 
+      // Check for emergency keywords first
+      if (detectEmergency(userText)) {
+        currentCallState.emergencyDetected = true;
+        currentCallState.state = 'EMERGENCY_CONFIRMATION';
+        botResponse.text = 'I understand this is an emergency. Can you confirm your current location and is it safe?';
+        res.json(botResponse);
+        return;
+      }
+
       switch (currentCallState.state) {
         case 'COLLECT_NAME':
-          // Extract name from userText
-          const nameMatch = userText.match(/(?:my name is|i am)\s+([a-z\s]+)/i);
-          currentCallState.name = nameMatch ? nameMatch[1].trim() : 'there'; // Default to 'there' if name not found
-          currentCallState.state = 'COLLECT_PHONE';
-          botResponse.text = `Thank you ${currentCallState.name}. And what is your callback number?`;
+          const nameMatch = userText.match(/(?:my name is|i am)\s+([a-zA-Z\s]+)/i);
+          if (nameMatch) {
+            currentCallState.name = nameMatch[1].trim();
+            currentCallState.state = 'COLLECT_PHONE';
+            botResponse.text = `Thank you ${currentCallState.name}. And what is your callback number?`;
+          } else {
+            botResponse.text = 'I did not catch your name. Can you please state your name?';
+            // state remains COLLECT_NAME
+          }
           break;
 
         case 'COLLECT_PHONE':
@@ -97,6 +118,12 @@ const handleRetellWebhook = async (req, res) => {
           botResponse.text = `Thank you, ${currentCallState.name}. We have recorded your issue as ${currentCallState.serviceIssue}. Someone will contact you shortly.`;
           break;
 
+        case 'EMERGENCY_CONFIRMATION':
+          // For now, simply acknowledge and move to next emergency step (e.g., collect address)
+          botResponse.text = 'Thank you for confirming. Can you provide the exact address of the emergency?';
+          // Future state: currentCallState.state = 'EMERGENCY_COLLECT_ADDRESS';
+          break;
+
         case 'COMPLETED':
           // Conversation is completed, perhaps just acknowledge or end the call
           botResponse.text = 'Your request has been noted. Goodbye.';
@@ -106,10 +133,10 @@ const handleRetellWebhook = async (req, res) => {
           botResponse.text = 'I am sorry, I do not understand. Could you please start over?';
           break;
       }
+      console.log(`[${callId}] New State (after switch): ${currentCallState.state}`);
       break;
 
     default:
-      console.log(`Unhandled event type: ${event.event_type}`);
       botResponse.text = 'I am sorry, I do not understand. Could you please start over?';
       break;
   }
@@ -124,7 +151,7 @@ module.exports = {
   clearLeads,
   handleRetellWebhook,
   app,
-  callStates, // Export callStates for testing
+  callStates,
 };
 
 const PORT = process.env.PORT || 8080;
