@@ -17,7 +17,7 @@
     - [ ] Implement initial professional greeting using Retell AI.
 - [x] Task: Conductor - User Manual Verification 'Core System Setup and Retell AI Integration' (Protocol in workflow.md) [056e72f]
 
-## Phase 2: Lead Capture and Basic Triage Logic
+## Phase 2: Lead Capture and Basic Triage Logic [checkpoint: 4166f58]
 
 - [x] Task: Implement Lead Capture Data Model and Storage Placeholder [30f52fe]
     - [ ] Write tests for lead data capture and storage.
@@ -35,7 +35,7 @@
     - [ ] Create a configurable `keywords.json` or similar for "Priority 1" emergency keywords.
     - [ ] Implement real-time audio stream processing to detect emergency keywords.
     - [ ] Implement logic to switch conversational flow based on keyword detection (Standard vs. Emergency).
-- [ ] Task: Conductor - User Manual Verification 'Lead Capture and Basic Triage Logic' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Lead Capture and Basic Triage Logic' (Protocol in workflow.md) [4166f58]
 
 ## Phase 3: Emergency Protocol and Technician Alerting
 
