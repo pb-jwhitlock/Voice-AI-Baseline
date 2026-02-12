@@ -44,7 +44,7 @@
     - [ ] Implement specific prompts for emergency scenarios (e.g., confirming safety).
     - [ ] Prioritize capturing the caller's phone number at the beginning of the emergency flow.
     - [ ] Design and implement conversational prompts to gather critical emergency details.
-- [ ] Task: Implement Technician Alerting System (Placeholder)
+- [~] Task: Implement Technician Alerting System (Placeholder)
     - [ ] Write tests for technician alerting trigger.
     - [ ] Define interface for alerting mechanism (e.g., a simple log or mock webhook call).
     - [ ] Implement logic to trigger technician alert upon confirmed emergency.
