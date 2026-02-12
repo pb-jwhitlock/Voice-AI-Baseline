@@ -39,6 +39,15 @@ const detectEmergency = (text) => {
   return emergencyKeywords.some(keyword => lowerText.includes(keyword));
 };
 
+// Placeholder for technician alerting system
+const triggerTechnicianAlert = (emergencyDetails) => {
+  console.log('--- TECHNICIAN ALERT TRIGGERED ---');
+  console.log('Emergency Details:', emergencyDetails);
+  console.log('----------------------------------');
+  // In a real system, this would send an SMS, email, webhook, etc.
+};
+
+
 const handleRetellWebhook = async (req, res) => {
   const event = req.body;
   const callId = event.call_id;
@@ -50,6 +59,8 @@ const handleRetellWebhook = async (req, res) => {
       phone: '',
       serviceIssue: '',
       emergencyDetected: false,
+      emergencyAddress: '', // Initialize emergency address
+      initialEmergencyReason: '', // To store the initial phrase that triggered emergency
     };
   }
 
@@ -77,6 +88,7 @@ const handleRetellWebhook = async (req, res) => {
       // Check for emergency keywords first (only if not already in emergency flow)
       if (!currentCallState.emergencyDetected && detectEmergency(userText)) {
         currentCallState.emergencyDetected = true;
+        currentCallState.initialEmergencyReason = userText; // Capture the reason
         currentCallState.state = 'EMERGENCY_CONFIRMATION';
         botResponse.text = 'I understand this is an emergency. Can you confirm your current location and is it safe?';
         res.json(botResponse);
@@ -120,14 +132,22 @@ const handleRetellWebhook = async (req, res) => {
 
         case 'EMERGENCY_CONFIRMATION':
           // Assume user confirms safety/location and asks for address
+          currentCallState.emergencySafetyConfirmation = userText; // Store confirmation
           currentCallState.state = 'EMERGENCY_COLLECT_ADDRESS';
           botResponse.text = 'Thank you for confirming. Can you provide the exact address of the emergency?';
           break;
 
         case 'EMERGENCY_COLLECT_ADDRESS':
-          // Here, we would parse and store the address
           currentCallState.emergencyAddress = userText;
-          // After collecting address, we might ask for more details or dispatch
+          console.log('Current Call State before alert:', currentCallState); // Debug log
+          module.exports.triggerTechnicianAlert({
+            name: currentCallState.name,
+            phone: currentCallState.phone, // Phone might not be collected yet
+            serviceIssue: currentCallState.initialEmergencyReason, // Use the initial reason for service issue
+            emergencyAddress: currentCallState.emergencyAddress,
+            emergencyDetected: currentCallState.emergencyDetected,
+            safetyConfirmation: currentCallState.emergencySafetyConfirmation,
+          });
           botResponse.text = `Thank you. We have the address as ${currentCallState.emergencyAddress}. Help will be dispatched immediately.`;
           currentCallState.state = 'COMPLETED_EMERGENCY';
           break;
@@ -164,6 +184,7 @@ module.exports = {
   handleRetellWebhook,
   app,
   callStates,
+  triggerTechnicianAlert, // Export for testing
 };
 
 const PORT = process.env.PORT || 8080;
