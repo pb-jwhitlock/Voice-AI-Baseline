@@ -19,7 +19,7 @@
 
 ## Phase 2: Lead Capture and Basic Triage Logic
 
-- [ ] Task: Implement Lead Capture Data Model and Storage Placeholder
+- [x] Task: Implement Lead Capture Data Model and Storage Placeholder [30f52fe]
     - [ ] Write tests for lead data capture and storage.
     - [ ] Define data structure for captured leads (name, phone, service issue).
     - [ ] Implement a temporary in-memory or file-based storage mechanism for lead data.
