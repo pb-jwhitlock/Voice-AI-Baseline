@@ -201,29 +201,49 @@ describe('Standard Call Intake Flow', () => {
     assert.strictEqual(callStates['test_call_id'].state, 'EMERGENCY_COLLECT_ADDRESS', 'State should move to EMERGENCY_COLLECT_ADDRESS');
   });
 
-  it('should not detect emergency keywords and continue with standard flow', async () => {
+  it('should trigger technician alert upon completing emergency details', async () => {
+    // Mock the external alert function
+    const mockTriggerAlert = sinon.stub();
+    // Temporarily replace the actual trigger function with the mock
+    const originalTriggerAlert = require('../index').triggerTechnicianAlert;
+    require('../index').triggerTechnicianAlert = mockTriggerAlert;
+
+
     const res = { json: sinon.stub() };
 
-    // Simulate call_started
+    // Simulate full emergency flow: call_started -> emergency detected -> confirmed safety -> provided address
     await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+    await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: 'Emergency! Flood!' }] } }, { json: () => {} });
+    await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: 'Yes, I am safe at 456 Oak Ave.' }] } }, { json: () => {} });
 
-    // Simulate turn_ended with no emergency keyword
-    const reqStandard = {
+    const reqAddress = {
       body: {
         event_type: 'turn_ended',
         call_id: 'test_call_id',
-        transcript: [{ role: 'user', content: 'I need a new faucet installed.' }],
+        transcript: [{ role: 'user', content: '456 Oak Ave, Anytown, CA' }],
       },
     };
-    await handleRetellWebhook(reqStandard, res);
+    await handleRetellWebhook(reqAddress, res);
 
-    assert.ok(res.json.calledOnce, 'Response should be sent');
+    // Verify alert function was called with correct details
+    assert.ok(mockTriggerAlert.calledOnce, 'Technician alert should be triggered');
+    assert.deepStrictEqual(mockTriggerAlert.getCall(0).args[0], {
+      name: '', // Name was not collected in emergency flow, so it should be empty
+      phone: '', // Phone was not collected/prioritized yet in this simulated flow
+      serviceIssue: 'Emergency! Flood!', // Initial emergency reason
+      emergencyAddress: '456 Oak Ave, Anytown, CA',
+      emergencyDetected: true,
+      safetyConfirmation: 'Yes, I am safe at 456 Oak Ave.', // Add this line
+    }, 'Alert should contain relevant emergency details');
+
     assert.deepStrictEqual(res.json.getCall(0).args[0], {
       response_type: 'response_type_text',
-      text: 'I did not catch your name. Can you please state your name?',
+      text: 'Thank you. We have the address as 456 Oak Ave, Anytown, CA. Help will be dispatched immediately.',
     });
-    assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_NAME', 'State should remain COLLECT_NAME');
-    assert.strictEqual(callStates['test_call_id'].emergencyDetected, false, 'Emergency should not be detected');
+    assert.strictEqual(callStates['test_call_id'].state, 'COMPLETED_EMERGENCY', 'State should be COMPLETED_EMERGENCY');
+
+    // Restore the original trigger function
+    require('../index').triggerTechnicianAlert = originalTriggerAlert;
   });
 
   it('should handle call_ended event and clear state', async () => {

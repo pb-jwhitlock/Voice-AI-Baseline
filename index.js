@@ -139,7 +139,6 @@ const handleRetellWebhook = async (req, res) => {
 
         case 'EMERGENCY_COLLECT_ADDRESS':
           currentCallState.emergencyAddress = userText;
-          console.log('Current Call State before alert:', currentCallState); // Debug log
           module.exports.triggerTechnicianAlert({
             name: currentCallState.name,
             phone: currentCallState.phone, // Phone might not be collected yet
