@@ -39,7 +39,7 @@
 
 ## Phase 3: Emergency Protocol and Technician Alerting
 
-- [~] Task: Develop Emergency Call Flow
+- [x] Task: Develop Emergency Call Flow [ef57533]
     - [ ] Write tests for emergency call conversational flow.
     - [ ] Implement specific prompts for emergency scenarios (e.g., confirming safety).
     - [ ] Prioritize capturing the caller's phone number at the beginning of the emergency flow.
