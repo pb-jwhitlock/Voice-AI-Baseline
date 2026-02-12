@@ -24,7 +24,7 @@
     - [ ] Define data structure for captured leads (name, phone, service issue).
     - [ ] Implement a temporary in-memory or file-based storage mechanism for lead data.
     - [ ] Implement functions to store and retrieve lead information.
-- [ ] Task: Develop Standard Call Intake Flow
+- [~] Task: Develop Standard Call Intake Flow
     - [ ] Write tests for standard call intake conversational flow.
     - [ ] Design and implement conversational prompts to collect caller name.
     - [ ] Design and implement conversational prompts to collect callback number with validation.
