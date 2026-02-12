@@ -1,20 +1,22 @@
-require('dotenv').config();
-const express = require('express');
-const app = express();
-const port = process.env.PORT || 3000;
+// Placeholder for lead data storage
+let leads = [];
 
-app.use(express.json());
+// Placeholder functions for storing and retrieving lead data
+const storeLead = (lead) => {
+  leads.push(lead);
+  return lead;
+};
 
-app.get('/', (req, res) => {
-  res.send('Voice AI Baseline is running!');
-});
+const getLeads = () => {
+  return leads;
+};
 
-// Placeholder for Retell AI webhook
-app.post('/retell-webhook', (req, res) => {
-  console.log('Retell Webhook received:', req.body);
-  res.status(200).send('Webhook received');
-});
+const clearLeads = () => {
+  leads = [];
+};
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+module.exports = {
+  storeLead,
+  getLeads,
+  clearLeads,
+};
