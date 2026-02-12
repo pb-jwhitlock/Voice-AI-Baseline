@@ -40,11 +40,26 @@ const detectEmergency = (text) => {
 };
 
 // Placeholder for technician alerting system
+// ANSI escape codes for styling
+const RESET = "\x1b[0m";
+const BG_RED = "\x1b[41m";
+const FG_WHITE = "\x1b[37m";
+const BRIGHT = "\x1b[1m";
+
 const triggerTechnicianAlert = (emergencyDetails) => {
-  console.log('--- TECHNICIAN ALERT TRIGGERED ---');
-  console.log('Emergency Details:', emergencyDetails);
-  console.log('----------------------------------');
-  // In a real system, this would send an SMS, email, webhook, etc.
+  const details = JSON.stringify(emergencyDetails, null, 2);
+  const lines = details.split('\n');
+  const maxLength = lines.reduce((max, line) => Math.max(max, line.length), 0);
+  const border = '***' + '*'.repeat(maxLength) + '***';
+
+  console.log(BG_RED + FG_WHITE + BRIGHT + border + RESET);
+  console.log(BG_RED + FG_WHITE + BRIGHT + `*** EMERGENCY ALERT ***` + ' '.repeat(maxLength - 17) + '***' + RESET);
+  console.log(BG_RED + FG_WHITE + BRIGHT + border + RESET);
+  lines.forEach(line => {
+    console.log(BG_RED + FG_WHITE + BRIGHT + `* ${line}` + ' '.repeat(maxLength - line.length + 1) + '*' + RESET);
+  });
+  console.log(BG_RED + FG_WHITE + BRIGHT + border + RESET);
+  // In a real system, this would also send an SMS, email, webhook, etc.
 };
 
 
