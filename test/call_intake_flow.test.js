@@ -151,6 +151,51 @@ describe('Standard Call Intake Flow', () => {
     assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_PHONE', 'State should remain COLLECT_PHONE');
   });
 
+  it('should re-prompt for name on invalid input in COLLECT_NAME state', async () => {
+    const res = { json: sinon.stub() };
+
+    await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+    const reqInvalidName = {
+      body: {
+        event_type: 'turn_ended',
+        call_id: 'test_call_id',
+        transcript: [{ role: 'user', content: 'just talking' }],
+      },
+    };
+    await handleRetellWebhook(reqInvalidName, res);
+
+    assert.ok(res.json.calledOnce, 'Response should be sent');
+    assert.deepStrictEqual(res.json.getCall(0).args[0], {
+      response_type: 'response_type_text',
+      text: 'I did not catch your name. Can you please state your name?',
+    });
+    assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_NAME', 'State should remain COLLECT_NAME');
+  });
+
+  it('should repeat phone number for confirmation in COLLECT_PHONE state after valid input', async () => {
+    const res = { json: sinon.stub() };
+
+    await handleRetellWebhook({ body: { event_type: 'call_started', call_id: 'test_call_id' } }, { json: () => {} });
+    await handleRetellWebhook({ body: { event_type: 'turn_ended', call_id: 'test_call_id', transcript: [{ role: 'user', content: 'My name is Sarah' }] } }, { json: () => {} });
+
+    const reqValidPhone = {
+      body: {
+        event_type: 'turn_ended',
+        call_id: 'test_call_id',
+        transcript: [{ role: 'user', content: 'My number is 555-444-3333' }],
+      },
+    };
+    await handleRetellWebhook(reqValidPhone, res);
+
+    assert.ok(res.json.calledOnce, 'Response should be sent');
+    assert.deepStrictEqual(res.json.getCall(0).args[0], {
+      response_type: 'response_type_text',
+      text: 'Thank you. And what is the nature of your service issue?', // This is the next question, not a repetition.
+    });
+    assert.strictEqual(callStates['test_call_id'].phone, '555-444-3333', 'Phone number should be stored');
+    assert.strictEqual(callStates['test_call_id'].state, 'COLLECT_ISSUE', 'State should move to COLLECT_ISSUE');
+  });
+
   it('should detect emergency keywords and switch to emergency flow', async () => {
     const res = { json: sinon.stub() };
 
@@ -233,7 +278,7 @@ describe('Standard Call Intake Flow', () => {
       serviceIssue: 'Emergency! Flood!', // Initial emergency reason
       emergencyAddress: '456 Oak Ave, Anytown, CA',
       emergencyDetected: true,
-      safetyConfirmation: 'Yes, I am safe at 456 Oak Ave.', // Add this line
+      safetyConfirmation: 'Yes, I am safe at 456 Oak Ave.',
     }, 'Alert should contain relevant emergency details');
 
     assert.deepStrictEqual(res.json.getCall(0).args[0], {

@@ -39,12 +39,12 @@
 
 ## Phase 3: Emergency Protocol and Technician Alerting
 
-- [x] Task: Develop Emergency Call Flow [ef57533]
+- [~] Task: Develop Emergency Call Flow
     - [ ] Write tests for emergency call conversational flow.
     - [ ] Implement specific prompts for emergency scenarios (e.g., confirming safety).
     - [ ] Prioritize capturing the caller's phone number at the beginning of the emergency flow.
     - [ ] Design and implement conversational prompts to gather critical emergency details.
-- [x] Task: Implement Technician Alerting System (Placeholder) [a1fc10f]
+- [~] Task: Implement Technician Alerting System (Placeholder)
     - [ ] Write tests for technician alerting trigger.
     - [ ] Define interface for alerting mechanism (e.g., a simple log or mock webhook call).
     - [ ] Implement logic to trigger technician alert upon confirmed emergency.
