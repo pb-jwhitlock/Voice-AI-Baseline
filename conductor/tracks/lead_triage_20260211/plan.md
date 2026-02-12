@@ -49,7 +49,7 @@
     - [ ] Define interface for alerting mechanism (e.g., a simple log or mock webhook call).
     - [ ] Implement logic to trigger technician alert upon confirmed emergency.
     - [ ] Capture all relevant emergency details for the alert.
-- [ ] Task: Graceful Error Recovery and Active Listening Refinement
+- [~] Task: Graceful Error Recovery and Active Listening Refinement
     - [ ] Write tests for error recovery scenarios in both standard and emergency flows.
     - [ ] Implement "Verbal Nods" (e.g., "I see," "Understood") in conversational responses.
     - [ ] Implement logic to repeat back key information (e.g., phone numbers, addresses) for confirmation.
